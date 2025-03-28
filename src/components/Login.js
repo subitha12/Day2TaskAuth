@@ -1,7 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useFormik } from "formik";
-import * as Yup from "yup";
 import styled from "styled-components";
 
 const Container = styled.div`
@@ -20,18 +18,6 @@ const FormWrapper = styled.div`
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   width: 350px;
   text-align: center;
-  animation: fadeIn 1.2s ease-in-out;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 `;
 
 const Title = styled.h2`
@@ -50,7 +36,6 @@ const Input = styled.input`
   font-size: 1rem;
   background: #2c2c2c;
   color: white;
-  transition: all 0.3s ease-in-out;
 
   &:focus {
     border-color: #ff8c00;
@@ -71,7 +56,6 @@ const Button = styled.button`
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
 
   &:hover {
     background: #e07b00;
@@ -86,53 +70,79 @@ const ErrorText = styled.p`
   margin-top: -5px;
 `;
 
+const SignupText = styled.p`
+  margin-top: 15px;
+  color: white;
+  font-size: 0.9rem;
+
+  a {
+    color: #ff8c00;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
 function Login({ setIsAuthenticated }) {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const formik = useFormik({
-    initialValues: { email: "", password: "" },
-    validationSchema: Yup.object({
-      email: Yup.string().email("Invalid email").required("Required"),
-      password: Yup.string().min(6, "Min 6 characters").required("Required"),
-    }),
-    onSubmit: (values) => {
-      const users = JSON.parse(localStorage.getItem("users")) || [];
-      const user = users.find((user) => user.email === values.email && user.password === values.password);
+  // Clear fields on logout
+  useEffect(() => {
+    const isLoggedIn = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!isLoggedIn) {
+      setEmail("");
+      setPassword("");
+    }
+  }, []);
 
-      if (user) {
-        localStorage.setItem("loggedInUser", JSON.stringify(user));
-        setIsAuthenticated(true);
-        navigate("/home");
-      } else {
-        alert("Invalid credentials!");
-      }
-    },
-  });
+  const handleLogin = (e) => {
+    e.preventDefault();
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let user = users.find((user) => user.email === email && user.password === password);
+
+    if (user) {
+      alert("Login successful!");
+      localStorage.setItem("loggedInUser", JSON.stringify(user)); // Store user session
+      setIsAuthenticated(true);
+      setEmail(""); // Clear email field
+      setPassword(""); // Clear password field
+      navigate("/home"); // Navigate to Home page after successful login
+    } else {
+      setError("Invalid email or password. Try again.");
+    }
+  };
 
   return (
     <Container>
       <FormWrapper>
         <Title>Login</Title>
-        <form onSubmit={formik.handleSubmit}>
+        <form onSubmit={handleLogin} autoComplete="off">
           <Input
             type="email"
-            name="email"
-            onChange={formik.handleChange}
             placeholder="Email"
-            value={formik.values.email}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="off"
           />
-          {formik.touched.email && formik.errors.email ? <ErrorText>{formik.errors.email}</ErrorText> : null}
-
           <Input
             type="password"
-            name="password"
-            onChange={formik.handleChange}
             placeholder="Password"
-            value={formik.values.password}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="off"
           />
-          {formik.touched.password && formik.errors.password ? <ErrorText>{formik.errors.password}</ErrorText> : null}
-
+          {error && <ErrorText>{error}</ErrorText>}
           <Button type="submit">Login</Button>
+          <SignupText>
+            Don't have an account? <a onClick={() => navigate("/signup")}>Create Account</a>
+          </SignupText>
         </form>
       </FormWrapper>
     </Container>

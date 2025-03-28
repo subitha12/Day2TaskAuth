@@ -86,6 +86,23 @@ const ErrorText = styled.p`
   margin-top: -5px;
 `;
 
+const LoginText = styled.p`
+  margin-top: 15px;
+  color: white;
+  font-size: 0.9rem;
+
+  a {
+    color: #ff8c00;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
 function Signup() {
   const navigate = useNavigate();
 
@@ -94,11 +111,19 @@ function Signup() {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
     validationSchema: Yup.object({
       name: Yup.string().min(3, "Minimum 3 characters").required("Required"),
       email: Yup.string().email("Invalid email").required("Required"),
-      password: Yup.string().min(6, "Minimum 6 characters").required("Required"),
+      password: Yup.string()
+        .min(6, "Minimum 6 characters")
+        .matches(/[A-Z]/, "Must include at least 1 uppercase letter")
+        .matches(/[!@#$%^&*(),.?":{}|<>]/, "Must include at least 1 special character")
+        .required("Required"),
+      confirmPassword: Yup.string()
+        .oneOf([Yup.ref("password"), null], "Passwords must match")
+        .required("Required"),
     }),
     onSubmit: (values) => {
       let users = JSON.parse(localStorage.getItem("users")) || [];
@@ -108,7 +133,7 @@ function Signup() {
         return;
       }
 
-      users.push(values);
+      users.push({ name: values.name, email: values.email, password: values.password });
       localStorage.setItem("users", JSON.stringify(users));
       alert("Signup successful! Please login.");
       navigate("/login");
@@ -147,7 +172,23 @@ function Signup() {
           />
           {formik.touched.password && formik.errors.password ? <ErrorText>{formik.errors.password}</ErrorText> : null}
 
+          <Input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            onChange={formik.handleChange}
+            value={formik.values.confirmPassword}
+          />
+          {formik.touched.confirmPassword && formik.errors.confirmPassword ? (
+            <ErrorText>{formik.errors.confirmPassword}</ErrorText>
+          ) : null}
+
           <Button type="submit">Signup</Button>
+
+          {/* Login Link */}
+          <LoginText>
+            Already have an account? <a onClick={() => navigate("/login")}>Login</a>
+          </LoginText>
         </form>
       </FormWrapper>
     </Container>
